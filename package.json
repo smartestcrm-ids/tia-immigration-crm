@@ -4,12 +4,15 @@
   "description": "Phase 1 - Unified Inbox + CRM for immigration consulting office",
   "main": "src/index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push --skip-generate",
     "db:reset": "prisma migrate reset --force",
     "db:seed": "node prisma/seed.js",
+    "deploy:start": "prisma db push --skip-generate && node src/index.js",
     "test:api": "node tests/api.test.js"
   },
   "prisma": {

@@ -1,0 +1,23 @@
+# Keep the Docker image small and the build deterministic.
+node_modules
+npm-debug.log*
+.env
+.env.*
+*.sqlite
+*.sqlite3
+prisma/dev.db
+prisma/dev.db-journal
+.git
+.gitignore
+.vscode
+.idea
+*.log
+logs
+coverage
+.nyc_output
+.DS_Store
+Thumbs.db
+Dockerfile
+.dockerignore
+README*.md
+DEPLOY*.md

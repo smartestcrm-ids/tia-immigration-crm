@@ -1,12 +1,12 @@
 // Prisma schema for Phase 1 - Unified Inbox + CRM
-// Switch provider to "postgresql" for production. Field types are Postgres-compatible.
+// Production: PostgreSQL on the VPS. Field types remain Postgres-compatible.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
