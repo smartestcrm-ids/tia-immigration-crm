@@ -1,0 +1,283 @@
+// Prisma schema for Phase 1 - Unified Inbox + CRM
+// Switch provider to "postgresql" for production. Field types are Postgres-compatible.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Roles & Permissions
+// -----------------------------------------------------------------------------
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  description String
+  category    String
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       User[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// -----------------------------------------------------------------------------
+// Users (consultants & admins)
+// -----------------------------------------------------------------------------
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String
+  role          String    @default("CONSULTANT")
+  roleId        Int?
+  roleRef       Role?     @relation(fields: [roleId], references: [id])
+  passwordHash  String?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignedLeads     Lead[]     @relation("LeadAssignedTo")
+  notes             Note[]
+  reminders         Reminder[]
+  uploadedDocuments Document[] @relation("DocumentUploadedBy")
+}
+
+// -----------------------------------------------------------------------------
+// Case Types
+// -----------------------------------------------------------------------------
+
+model CaseType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  leads Lead[]
+}
+
+// -----------------------------------------------------------------------------
+// Leads
+// -----------------------------------------------------------------------------
+
+model Lead {
+  id                Int       @id @default(autoincrement())
+  fullName          String
+  email             String?
+  phone             String?
+
+  source            String
+  status            String    @default("NEW")
+
+  caseTypeId        Int?
+  caseType          CaseType? @relation(fields: [caseTypeId], references: [id])
+
+  assignedToId      Int?
+  assignedTo        User?     @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+
+  externalContactId String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  conversations Conversation[]
+  notes         Note[]
+  reminders     Reminder[]
+  clientProfile ClientProfile?
+
+  @@unique([source, externalContactId], name: "uniq_lead_per_channel_contact")
+  @@index([assignedToId, status])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Channel Accounts (multiple per channel)
+// -----------------------------------------------------------------------------
+
+model ChannelAccount {
+  id          Int      @id @default(autoincrement())
+  channel     String   // WHATSAPP | EMAIL | TELEGRAM | INSTAGRAM | SMS | WEB_FORM
+  label       String   // e.g. "Toronto WhatsApp", "info@firm.com"
+  identifier  String   // unique per channel: phone number, email, handle, bot name
+  config      String?  // JSON: channel-specific config (api keys, etc.)
+  active      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversations Conversation[]
+
+  @@unique([channel, identifier], name: "uniq_channel_identifier")
+}
+
+// -----------------------------------------------------------------------------
+// Conversations & Messages
+// -----------------------------------------------------------------------------
+
+model Conversation {
+  id               Int       @id @default(autoincrement())
+  leadId           Int
+  lead             Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  channel          String
+  externalThreadId String?
+
+  channelAccountId Int?
+  channelAccount   ChannelAccount? @relation(fields: [channelAccountId], references: [id])
+
+  lastMessageAt    DateTime  @default(now())
+  unreadCount      Int       @default(0)
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  messages Message[]
+
+  @@index([lastMessageAt])
+  @@index([leadId])
+  @@index([channel])
+}
+
+model Message {
+  id                Int       @id @default(autoincrement())
+  conversationId    Int
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  direction         String
+  channel           String
+  body              String
+  externalMessageId String?   @unique
+  status            String    @default("RECEIVED")
+
+  sentAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, sentAt])
+}
+
+// -----------------------------------------------------------------------------
+// Notes & Reminders
+// -----------------------------------------------------------------------------
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  Int?
+  author    User?    @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+model Reminder {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  ownerId   Int?
+  owner     User?    @relation(fields: [ownerId], references: [id])
+  title     String
+  dueAt     DateTime
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, completed, dueAt])
+  @@index([leadId])
+}
+
+// -----------------------------------------------------------------------------
+// Client Profile, Family Members, Documents
+// (Created once a Lead becomes CONVERTED)
+// -----------------------------------------------------------------------------
+
+model ClientProfile {
+  id     Int  @id @default(autoincrement())
+  leadId Int  @unique
+  lead   Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  dateOfBirth    DateTime?
+  nationality    String?
+  passportNumber String?
+  passportExpiry DateTime?
+  address        String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyMembers FamilyMember[]
+  documents     Document[]
+}
+
+model FamilyMember {
+  id              Int           @id @default(autoincrement())
+  clientProfileId Int
+  clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
+
+  relation       String  // SPOUSE | CHILD | PARENT | SIBLING | OTHER
+  fullName       String
+  dateOfBirth    DateTime?
+  nationality    String?
+  passportNumber String?
+  passportExpiry DateTime?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+
+  @@index([clientProfileId])
+}
+
+model Document {
+  id            Int    @id @default(autoincrement())
+  filename      String
+  mimeType      String
+  size          Int
+  category      String // PASSPORT | BIRTH_CERT | MARRIAGE_CERT | IELTS | OTHER
+  contentBase64 String // base64-encoded file content
+
+  clientProfileId Int?
+  clientProfile   ClientProfile? @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
+
+  familyMemberId Int?
+  familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+
+  uploadedById Int?
+  uploadedBy   User? @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([clientProfileId])
+  @@index([familyMemberId])
+}

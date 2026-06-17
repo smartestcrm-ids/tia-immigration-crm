@@ -1,0 +1,51 @@
+# --- Secrets & local config (NEVER commit these) ---
+.env
+.env.local
+.env.*.local
+
+# --- Local SQLite databases (we're migrating to Postgres on the VPS) ---
+dev.db
+dev.db-journal
+*.sqlite
+*.sqlite3
+prisma/dev.db
+prisma/dev.db-journal
+prisma/migrations/dev.db*
+prisma/migrations/*.lock
+
+# --- Dependencies ---
+node_modules/
+package-lock.json.bak
+
+# --- Build output ---
+dist/
+build/
+out/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# --- Coverage / testing ---
+coverage/
+.nyc_output/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Misc ---
+.cache/
+tmp/
+temp/
