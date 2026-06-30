@@ -45,13 +45,27 @@ async function authenticate(email, password) {
   };
 }
 
+/**
+ * Resolve a role name (e.g. "ADMIN") to its database Role.id, so that the
+ * user gets BOTH a role string and a roleId — the latter is what the
+ * permission middleware uses to look up the role's permissions.
+ */
+async function resolveRoleId(roleName) {
+  if (!roleName) return null;
+  const role = await prisma.role.findUnique({ where: { name: roleName } });
+  return role ? role.id : null;
+}
+
 async function createUserWithPassword({ email, name, role, password }) {
   const passwordHash = password ? await hashPassword(password) : null;
+  const roleName = role || 'CONSULTANT';
+  const roleId = await resolveRoleId(roleName);
   return prisma.user.create({
     data: {
       email: email.toLowerCase().trim(),
       name,
-      role: role || 'CONSULTANT',
+      role: roleName,
+      roleId,
       passwordHash,
     },
   });
@@ -64,4 +78,5 @@ module.exports = {
   verifyToken,
   authenticate,
   createUserWithPassword,
+  resolveRoleId,
 };

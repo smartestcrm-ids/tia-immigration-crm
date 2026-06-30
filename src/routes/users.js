@@ -73,6 +73,10 @@ router.patch(
       delete update.password;
     }
     if (update.email) update.email = update.email.toLowerCase().trim();
+    // Keep role + roleId in sync so the permission middleware works.
+    if (data.role !== undefined) {
+      update.roleId = await authService.resolveRoleId(data.role);
+    }
     const user = await prisma.user.update({
       where: { id: Number(req.params.id) },
       data: update,

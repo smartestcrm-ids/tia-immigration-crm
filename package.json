@@ -13,6 +13,7 @@
     "db:reset": "prisma migrate reset --force",
     "db:seed": "node prisma/seed.js",
     "seed:tia": "node prisma/seed-tia.js",
+    "backfill:roleids": "node prisma/backfill-roleids.js",
     "deploy:start": "prisma db push --skip-generate && node src/index.js",
     "test:api": "node tests/api.test.js"
   },
