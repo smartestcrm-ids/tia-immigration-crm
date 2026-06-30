@@ -59,6 +59,12 @@ model User {
   roleRef       Role?     @relation(fields: [roleId], references: [id])
   passwordHash  String?
   active        Boolean   @default(true)
+  // Protected users cannot be disabled, role-changed, or deleted via the API.
+  // Use for system / owner accounts that should never be lost by accident.
+  isProtected   Boolean   @default(false)
+  // Hidden users do not appear in the Users list or in assignment dropdowns.
+  // Only the user themselves can see their own record.
+  hidden        Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
