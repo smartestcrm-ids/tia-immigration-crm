@@ -15,6 +15,7 @@
     "seed:tia": "node prisma/seed-tia.js",
     "backfill:roleids": "node prisma/backfill-roleids.js",
     "protect:admins": "node prisma/protect-admins.js",
+    "import:leads": "node prisma/import-leads.js",
     "deploy:start": "prisma db push --skip-generate && node src/index.js",
     "test:api": "node tests/api.test.js"
   },
