@@ -12,6 +12,7 @@
     "db:push": "prisma db push --skip-generate",
     "db:reset": "prisma migrate reset --force",
     "db:seed": "node prisma/seed.js",
+    "seed:tia": "node prisma/seed-tia.js",
     "deploy:start": "prisma db push --skip-generate && node src/index.js",
     "test:api": "node tests/api.test.js"
   },
