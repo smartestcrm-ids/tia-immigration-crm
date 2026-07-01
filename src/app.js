@@ -16,6 +16,8 @@ const rolesRouter = require('./routes/roles');
 const clientProfileRouter = require('./routes/clientProfile');
 const channelAccountsRouter = require('./routes/channelAccounts');
 const casesRouter = require('./routes/cases');
+const reportsRouter = require('./routes/reports');
+const messagingRouter = require('./routes/messaging');
 const errorHandler = require('./middleware/errorHandler');
 const { requireAuth } = require('./middleware/auth');
 
@@ -47,6 +49,8 @@ app.use('/api/conversations', conversationsRouter);
 app.use('/api/roles', rolesRouter);
 app.use('/api/channel-accounts', channelAccountsRouter);
 app.use('/api/cases', casesRouter);
+app.use('/api/reports', reportsRouter);
+app.use('/api/messaging', messagingRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
