@@ -17,6 +17,7 @@
     "protect:admins": "node prisma/protect-admins.js",
     "import:leads": "node prisma/import-leads.js",
     "backfill:cases": "node prisma/backfill-cases.js",
+    "assign:managers": "node prisma/assign-case-managers.js",
     "deploy:start": "prisma db push --skip-generate && node src/index.js",
     "test:api": "node tests/api.test.js"
   },
