@@ -3,6 +3,7 @@ const { z } = require('zod');
 const asyncHandler = require('../middleware/asyncHandler');
 const { requireRole } = require('../middleware/auth');
 const leadService = require('../services/leadService');
+const caseService = require('../services/caseService');
 const { CHANNELS, LEAD_STATUSES } = require('../constants');
 
 const router = express.Router();
@@ -52,6 +53,12 @@ router.patch(
   asyncHandler(async (req, res) => {
     const data = LeadUpdateSchema.parse(req.body);
     const lead = await leadService.updateLead(req.params.id, data, { actor: req.user });
+    // When a lead transitions to CONVERTED, auto-create the case + checklist
+    // (safe to call every time — the underlying method is idempotent).
+    if (lead && lead.status === 'CONVERTED') {
+      try { await caseService.ensureCaseForLead(lead.id); }
+      catch (e) { console.warn(`[leads] failed to open case for lead ${lead.id}:`, e.message); }
+    }
     res.json(lead);
   })
 );

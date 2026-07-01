@@ -72,6 +72,8 @@ model User {
   notes             Note[]
   reminders         Reminder[]
   uploadedDocuments Document[] @relation("DocumentUploadedBy")
+  managedCases      Case[]     @relation("CaseManager")
+  completedStages   CaseStageEvent[] @relation("CaseStageCompletedBy")
 }
 
 // -----------------------------------------------------------------------------
@@ -116,6 +118,7 @@ model Lead {
   notes         Note[]
   reminders     Reminder[]
   clientProfile ClientProfile?
+  case          Case?
 
   @@unique([source, externalContactId], name: "uniq_lead_per_channel_contact")
   @@index([assignedToId, status])
@@ -265,6 +268,89 @@ model FamilyMember {
   @@index([clientProfileId])
 }
 
+// -----------------------------------------------------------------------------
+// Cases — post-contract workflow (12-stage pipeline for CONVERTED leads)
+// -----------------------------------------------------------------------------
+
+model Case {
+  id     Int  @id @default(autoincrement())
+  leadId Int  @unique
+  lead   Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  caseTypeId Int?
+  caseType   CaseType? @relation(fields: [caseTypeId], references: [id])
+
+  // See CASE_STAGES in src/caseTemplates.js
+  currentStage String @default("SIGNED")
+  // ACTIVE | ON_HOLD | SUBMITTED | CLOSED
+  status       String @default("ACTIVE")
+
+  caseManagerId Int?
+  caseManager   User? @relation("CaseManager", fields: [caseManagerId], references: [id])
+
+  // Financial (from the requirements doc's Client Workflow)
+  agreementAmount Float?
+  amountPaid      Float?
+  currency        String   @default("CAD")
+  agreementDate   DateTime?
+
+  notes String?
+
+  openedAt    DateTime  @default(now())
+  submittedAt DateTime?
+  closedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stageHistory CaseStageEvent[]
+  requirements DocumentRequirement[]
+
+  @@index([status])
+  @@index([caseManagerId])
+}
+
+model CaseStageEvent {
+  id            Int      @id @default(autoincrement())
+  caseId        Int
+  case          Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  stage         String
+  // COMPLETED | SKIPPED | UNDONE
+  status        String   @default("COMPLETED")
+  completedAt   DateTime @default(now())
+  completedById Int?
+  completedBy   User?    @relation("CaseStageCompletedBy", fields: [completedById], references: [id])
+  notes         String?
+
+  @@index([caseId, completedAt])
+}
+
+model DocumentRequirement {
+  id     Int  @id @default(autoincrement())
+  caseId Int
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  name     String
+  category String? // IDENTITY | EDUCATION | FINANCIAL | LEGAL | OTHER
+  // PENDING | REQUESTED | RECEIVED | MISSING | NA
+  status   String  @default("PENDING")
+
+  requiredForApplicant Boolean @default(true)
+  familyMemberName     String? // free-text, for family members if applicable
+
+  documentId Int?
+  document   Document? @relation("RequirementDocument", fields: [documentId], references: [id])
+
+  requestedAt DateTime?
+  receivedAt  DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([caseId, status])
+}
+
 model Document {
   id            Int    @id @default(autoincrement())
   filename      String
@@ -281,6 +367,8 @@ model Document {
 
   uploadedById Int?
   uploadedBy   User? @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+
+  fulfillsRequirements DocumentRequirement[] @relation("RequirementDocument")
 
   createdAt DateTime @default(now())
 
