@@ -88,6 +88,7 @@ model CaseType {
   createdAt   DateTime @default(now())
 
   leads Lead[]
+  cases Case[]
 }
 
 // -----------------------------------------------------------------------------
