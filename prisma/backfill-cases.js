@@ -18,6 +18,7 @@ const KNOWN_FINANCIALS = {
   'leila55araji@gmail.com':      { agreementAmount: 250,  amountPaid: 250,  agreementDate: '2026-06-29' },
   'kianakazemii2002@gmail.com':  { agreementAmount: 3500, amountPaid: 1000, agreementDate: '2026-06-29' },
   'atemehtakloo@gmail.com':      { agreementAmount: 1400, amountPaid: 1000, agreementDate: '2026-04-01' },
+  'safoura.janosepah@gmail.com': { agreementAmount: 80,   amountPaid: 80,   agreementDate: '2024-09-01' },
 };
 
 async function main() {

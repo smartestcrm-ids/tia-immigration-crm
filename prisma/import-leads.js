@@ -48,6 +48,17 @@ const CLIENTS = [
     balance: 1000,
     extraNotes: 'Dependent visa',
   },
+  {
+    fullName: 'Safoura Janosepah',
+    email: 'safoura.janosepah@gmail.com',
+    phoneRaw: '16479177766',
+    caseType: 'Start-Up Visa',
+    agreementDate: '2024-09-01',
+    agreement: 80,
+    paid: 80,
+    balance: 0,
+    extraNotes: 'Start-Up Visa (SUV)',
+  },
 ];
 
 // ---------------------------------------------------------------------------
